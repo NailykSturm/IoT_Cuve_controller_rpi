@@ -52,7 +52,7 @@ def main():
                 relais[relais_todo].toggle()
                 relais_todo = (relais_todo + 1) % len(relais_pins)
 
-            time.sleep(2)
+            time.sleep(0.5)
         except KeyboardInterrupt:
             relay0.off()
             relay1.off()
