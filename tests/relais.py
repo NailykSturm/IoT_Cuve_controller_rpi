@@ -1,16 +1,16 @@
 import RPi.GPIO as GPIO
 
-class GroveRelay(GPIO):
+class GroveRelay():
+    
     def __init__(self, pin):
-        super(GroveRelay, self).__init__(pin, GPIO.OUT)
+        GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
+        self._pin = pin
 
     def on(self):
-        self.write(1)
+        GPIO.output(self._pin, GPIO.HIGH)
 
     def off(self):
-        self.write(0)
-
-Grove = GroveRelay
+        GPIO.output(self._pin, GPIO.LOW)
 
 def main():
     import sys
