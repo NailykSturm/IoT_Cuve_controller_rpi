@@ -25,11 +25,11 @@ def setRGB(r,g,b):
     bus.write_byte_data(DISPLAY_RGB_ADDR,3,g)
     bus.write_byte_data(DISPLAY_RGB_ADDR,2,b)
 
-# send command to display (no need for external use)    
+# send command to display (no need for external use)
 def textCommand(cmd):
     bus.write_byte_data(DISPLAY_TEXT_ADDR,0x80,cmd)
 
-# set display text \n for second line(or auto wrap)     
+# set display text \n for second line(or auto wrap)
 def setText(text):
     textCommand(0x01) # clear display
     time.sleep(.05)
@@ -75,12 +75,12 @@ def setText_norefresh(text):
 
 # example code
 if __name__=="__main__":
-    setText("Hello world\nThis is an LCD test")
+    setText("Hello world\nLCD test")
     setRGB(0,128,64)
     time.sleep(2)
-    for c in range(0,255):
+    for c in range(255,0, -1):
         setText_norefresh("Going to sleep in {}...".format(str(c)))
         setRGB(c,255-c,0)
         time.sleep(0.1)
     setRGB(0,255,0)
-    setText("Bye bye, this should wrap onto next line")
+    setText("Bye bye ^^ !")
