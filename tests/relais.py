@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 class GroveRelay():
     
     def __init__(self, pin):
+        print("new relais, pin : " + str(pin))
         GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
         self._value = GPIO.LOW
         self._pin = pin
@@ -29,7 +30,8 @@ class Button():
     def isPressed(self):
         return GPIO.input(self._pin) == GPIO.HIGH
 
-relais_pins = [16, 18, 24, 26]
+# relais_pins = [32, 33, 36, 37]
+relais_pins = [12, 13, 16, 26]
 
 def main():
     import time
@@ -40,7 +42,8 @@ def main():
     relay1 = GroveRelay(relais_pins[1])
     relay2 = GroveRelay(relais_pins[2])
     relay3 = GroveRelay(relais_pins[3])
-    btn = Button(22)
+    # btn = Button(13)
+    btn = Button(27)
 
     relais = [relay0, relay1, relay2, relay3]
 
