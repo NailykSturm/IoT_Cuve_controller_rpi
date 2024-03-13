@@ -223,29 +223,26 @@ class Core(metaclass=Singleton):
         GPIO.setmode(GPIO.BCM)
 
         self._buttons: list[self.Button] = []
-        self._relais: list[self.Button] = []
+        self._relays: list[self.Button] = []
         self._lcd: self.LCD = None
 
-        # btns_pins = [13,15,16,18]
-        # relais_pins = [32,33,36,37]
-        btns_pins = [27, 22, 23, 24]
-        relais_pins = [12, 13, 16, 26]
-        lcd_rgb_adress = 0x62
-        lcd_text_adress = 0x3e
-
+        btns_pins = [27, 22, 23, 24] # Buttons wired on pins 13, 15, 16, 18
+        relays_pins = [12, 13, 16, 26] # Relays wired on pins 32, 33, 36, 37
+        lcd_rgb_adress = 0x62 # Bus address to change the RGB value for the LCD
+        lcd_text_adress = 0x3e # Bus address to change the text value for the LCD
 
         print("pins buttons = " + str(btns_pins))
-        print("pins relais = " + str(relais_pins))
+        print("pins relais = " + str(relays_pins))
 
         for i in range(0, len(btns_pins)):
             btn = self.Button(pin=btns_pins[i])
             print("Add button : " + str(btn))
             self._buttons.append(btn)
 
-        for i in range(0, len(relais_pins)):
-            relais = self.Relais(pin=relais_pins[i])
+        for i in range(0, len(relays_pins)):
+            relais = self.Relais(pin=relays_pins[i])
             print("Add relais : " + str(relais))
-            self._relais.append(relais)
+            self._relays.append(relais)
 
         self._lcd = self.RGBLCD(lcd_text_adress, lcd_rgb_adress)
         self._lcd.setRGB(0,255,0)
@@ -263,15 +260,15 @@ if __name__ == "__main__":
         try:
             for i in range (len(core._buttons)):
                 if (core._buttons[i].isPressed()):
-                    core._relais[i].toggle()
+                    core._relays[i].toggle()
                     core._lcd.setRGB(random.randrange(0,255,1),random.randrange(0,255,1),random.randrange(0,255,1))
-                    core._lcd.setTextNoRefresh("toggle "+ str(core._relais[i]))
+                    core._lcd.setTextNoRefresh("toggle "+ str(core._relays[i]))
 
             time.sleep(.15)
 
         except KeyboardInterrupt:
-            for i in range(len(core._relais)):
-                core._relais[i].off()
+            for i in range(len(core._relays)):
+                core._relays[i].off()
 
             core._lcd.setRGB(255,0,30)
             core._lcd.setText("Bye bye ^^ !")
