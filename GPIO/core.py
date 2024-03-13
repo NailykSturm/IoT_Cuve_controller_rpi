@@ -1,3 +1,4 @@
+from threading import Lock, Thread
 import RPi.GPIO as GPIO
 import time, sys
 
@@ -80,8 +81,6 @@ class Core(metaclass=Singleton):
             return "Relais - " + str(self._pin)
     
     class LCD:
-        def __init__(self, textAddress):
-            self._textAddress = textAddress
 
         def textCommand(self, cmd):
             """
@@ -140,38 +139,107 @@ class Core(metaclass=Singleton):
                 count += 1
                 bus.write_byte_data(self._textAddress,0x40,ord(c))
 
-        def setText(self, text, autoWrap=True):
+        def getTextToDisplay(self, lowerIndex):
             """
-            Clear the old text and replace it by the newest
+            Get the portion of text to display
 
             Args:
-                text (str): Text to display
-                autoWrap (bool, optional): Auto return to line if the text is > 16 characters. Defaults to True.
+                lowerIndex (int): index of the first letter to start in the text to display
             """
-            self.clear()
-            self.setLCDParam()
-            self.writeText(text, autoWrap)
+            upperIndex = lowerIndex + self._maxDisplaySize
+            if (upperIndex < len(self._currentText)):
+                # Tout ce qui est retourné fait parti du texte
+                return self._currentText[lowerIndex:(lowerIndex+self._maxDisplaySize)]
+            elif upperIndex >= len(self._currentText) and upperIndex < (len(self._currentText) + self._textPadding):
+                # Si on a une partie du texte, mais on ajoute des espaces avant de repasser le texte
+                text = self._currentText[lowerIndex:]
+                while (len(text) < self._maxDisplaySize):
+                    text += ' '
+                return text
+            elif upperIndex >= (len(self._currentText) + self._textPadding) and lowerIndex < (len(self._currentText) + self._textPadding):
+                # Le texte est entièrement passé (ou presque) et il faut réaficher le début du texte
+                text = ""
+                if (lowerIndex < len(self._currentText)):
+                    text += self._currentText[lowerIndex:]
+                    for i in range(0, self._textPadding):
+                        text += ' '
+                else:
+                    for i in range(0, self._textPadding - (lowerIndex - len(self._currentText))):
+                        text += ' '
+                text += self._currentText[:(self._maxDisplaySize - ((lowerIndex - len(self._currentText)) + self._textPadding))]
+                return text
 
-        def setTextNoRefresh(self, text):
+        def getMenuText(self):
+            """
+            Get the menu text (to add aftewards on the LCD)
+            """
+            if (self._maxDisplaySize == 16):
+                menuBar = ""
+                if (self._arrowDisplayed == 0 or self._arrowDisplayed == 1):
+                    menuBar += "<"
+                else:
+                    menuBar += " "
+                menuBar += "    X    V    "
+                if (self._arrowDisplayed == 0 or self._arrowDisplayed == 2):
+                    menuBar += ">"
+                else:
+                    menuBar += " "
+                return menuBar
+            return ""
+
+        def t_scrollText(self):
+            lastTextLoaded = self._currentText
+            while (self._isThreadRuning):
+                self.home()
+                self.setLCDParam()
+                if (lastTextLoaded != self._currentText):
+                    indexToStart = 0
+                    lastTextLoaded = self._currentText
+
+                if (self._lockDisplayThread.acquire(blocking=False)):
+                    self._lockDisplayThread.release()
+                    if ((len(self._currentText)) > self._maxDisplaySize):
+                        if (self._maxDisplaySize == 16):
+                            self.writeText(self.getTextToDisplay(indexToStart), False)
+                            self.writeText("\n" + self.getMenuText())
+                        else:
+                            self.writeText(self.getTextToDisplay(indexToStart))
+
+                        indexToStart += 1
+                        if (indexToStart == (len(self._currentText) + self._textPadding)):
+                            indexToStart = 0
+                    else:
+                        if (self._maxDisplaySize == 16):
+                            self.writeText(self._currentText, False)
+                            self.writeText("\n" + self.getMenuText())
+                        else:
+                            self.writeText(self._currentText)
+                time.sleep(.2)
+
+
+        def setText(self, text):
             """
             Set the current message without clear the lcd 
 
             Args:
                 text (str): text to add
             """
-            self.home()
-            self.setLCDParam()
             while len(text) < 32: #clears the rest of the screen
                 text += ' '
-            self.writeText(text)
+            self._lockDisplayThread.acquire(blocking=True)
+            self._currentText = text
+            self._maxDisplaySize = 32
+            self._lockDisplayThread.release()
 
         def setMenuText(self, text, arrowDisplayed=0):
             """
             Set a menu label, with the text on the first line and a navigation menu on the second
 
             Ex:
-            Config : 
-            <    X    V    >
+            
+                Config : 
+
+                <    X    V    >
 
             Args:
                 text (str): Text to display
@@ -179,22 +247,33 @@ class Core(metaclass=Singleton):
             """
             if (arrowDisplayed > 4 or arrowDisplayed < 0):
                 raise ValueError
-            menuBar = ""
+            self._lockDisplayThread.acquire(blocking=True)
+            self._arrowDisplayed = arrowDisplayed
+            self._currentText = text
+            self._maxDisplaySize = 16
+            self._lockDisplayThread.release()
 
-            if (arrowDisplayed == 0 or arrowDisplayed == 1):
-                menuBar += "<"
-            else:
-                menuBar += " "
-            menuBar += "    X    V    "
-            if (arrowDisplayed == 0 or arrowDisplayed == 2):
-                menuBar += ">"
-            else:
-                menuBar += " "
+        def quit(self):
+            """
+            Exit the programm
+            """
+            time.sleep(0.2)
+            self._isThreadRuning = False
+            self._displayThread.join()
 
-            self.clear()
-            self.setLCDParam()
-            self.writeText(text, False)
-            self.writeText("\n" + menuBar)
+        def __init__(self, textAddress):
+            self._textAddress = textAddress
+
+            ### INITIAL CONFIG
+            self._textPadding = 6
+            self._currentText = ""
+            self._maxDisplaySize = 32
+            self._arrowDisplayed = 0
+            self._isThreadRuning = True
+            
+            self._lockDisplayThread: Lock = Lock()
+            self._displayThread = Thread(target=self.t_scrollText)
+            self._displayThread.start()
 
 
     class RGBLCD(LCD):
@@ -226,6 +305,7 @@ class Core(metaclass=Singleton):
         self._relays: list[self.Button] = []
         self._lcd: self.LCD = None
 
+        ### INITIAL CONFIG
         btns_pins = [27, 22, 23, 24] # Buttons wired on pins 13, 15, 16, 18
         relays_pins = [12, 13, 16, 26] # Relays wired on pins 32, 33, 36, 37
         lcd_rgb_adress = 0x62 # Bus address to change the RGB value for the LCD
@@ -248,11 +328,16 @@ class Core(metaclass=Singleton):
         self._lcd.setRGB(0,255,0)
         self._lcd.setText("Initialisation ended")
 
+    def quit(self):
+        self._lcd.quit()
+
 
 if __name__ == "__main__":
     import random
 
     core = Core()
+
+    time.sleep(.2)
 
     core._lcd.setMenuText("Press button to test, OK ?")
 
@@ -262,7 +347,7 @@ if __name__ == "__main__":
                 if (core._buttons[i].isPressed()):
                     core._relays[i].toggle()
                     core._lcd.setRGB(random.randrange(0,255,1),random.randrange(0,255,1),random.randrange(0,255,1))
-                    core._lcd.setTextNoRefresh("toggle "+ str(core._relays[i]))
+                    core._lcd.setText("toggle "+ str(core._relays[i]))
 
             time.sleep(.15)
 
@@ -272,5 +357,6 @@ if __name__ == "__main__":
 
             core._lcd.setRGB(255,0,30)
             core._lcd.setText("Bye bye ^^ !")
+            core.quit()
             print("exit")
             exit(1)
