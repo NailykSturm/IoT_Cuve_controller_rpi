@@ -152,7 +152,7 @@ class Core(metaclass=Singleton):
             self.setLCDParam()
             self.writeText(text, autoWrap)
 
-        def setText_norefresh(self, text):
+        def setTextNoRefresh(self, text):
             """
             Set the current message without clear the lcd 
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
                 if (core._buttons[i].isPressed()):
                     core._relais[i].toggle()
                     core._lcd.setRGB(random.randrange(0,255,1),random.randrange(0,255,1),random.randrange(0,255,1))
-                    core._lcd.setText_noRefresh("toggle "+ str(core._relais[i]))
+                    core._lcd.setTextNoRefresh("toggle "+ str(core._relais[i]))
 
             time.sleep(.15)
 
