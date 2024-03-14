@@ -323,7 +323,7 @@ class Core(metaclass=Singleton):
     def getForwardButton(self) -> Button:
         return self._buttons[3]
     def getCancelButton(self) -> Button:
-        return self._button[1]
+        return self._buttons[1]
     def getValidateButton(self) -> Button:
         return self._buttons[2]
     
@@ -362,8 +362,8 @@ if __name__ == "__main__":
             for i in range (len(core._buttons)):
                 if (core._buttons[i].isPressed()):
                     core._relays[i].toggle()
-                    core._lcd.setRGB(random.randrange(0,255,1),random.randrange(0,255,1),random.randrange(0,255,1))
-                    core._lcd.setText("toggle {} by {}".format(str(core._relays[i]), str(core._buttons[i])))
+                    core.setColor(random.randrange(0,255,1),random.randrange(0,255,1),random.randrange(0,255,1))
+                    core.setText("toggle {} by {}".format(str(core._relays[i]), str(core._buttons[i])))
 
             time.sleep(.15)
 
@@ -371,8 +371,8 @@ if __name__ == "__main__":
             for i in range(len(core._relays)):
                 core._relays[i].off()
 
-            core._lcd.setRGB(255,0,30)
-            core._lcd.setText("Bye bye ^^ !")
+            core.setColor(255,0,30)
+            core.setText("Bye bye ^^ !")
             core.quit()
             print("exit")
             exit(1)
