@@ -35,7 +35,7 @@ class Button:
     def __str__(self) -> str:
         return "Button - " + str(self._pin)
 
-class Relais:
+class Relay:
 
     def __init__(self, pin) -> None:
         GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
@@ -292,7 +292,7 @@ class Core(metaclass=Singleton):
         GPIO.setmode(GPIO.BCM)
 
         self._buttons: list[Button] = []
-        self._relays: list[Button] = []
+        self._relays: list[Relay] = []
         self._lcd: LCD = None
 
         ### INITIAL CONFIG
@@ -310,7 +310,7 @@ class Core(metaclass=Singleton):
             self._buttons.append(btn)
 
         for i in range(0, len(relays_pins)):
-            relais = Relais(pin=relays_pins[i])
+            relais = Relay(pin=relays_pins[i])
             print("Add relais : " + str(relais))
             self._relays.append(relais)
 
