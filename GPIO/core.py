@@ -166,7 +166,8 @@ class Core(metaclass=Singleton):
                 else:
                     for i in range(0, self._textPadding - (lowerIndex - len(self._currentText))):
                         text += ' '
-                text += self._currentText[:(self._maxDisplaySize - ((lowerIndex - len(self._currentText)) + self._textPadding))]
+                upperIndex = upperIndex % (len(self._currentText) + self._textPadding)
+                text += self._currentText[:upperIndex]
                 return text
 
         def getMenuText(self):
