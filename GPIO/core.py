@@ -338,8 +338,8 @@ class Core(metaclass=Singleton):
 
     def setText(self, text):
         self._lcd.setText(text)
-    def setMenuText(self, text):
-        self._lcd.setMenuText(text)
+    def setMenuText(self, text, arrowDisplayed=0):
+        self._lcd.setMenuText(text, arrowDisplayed)
     def setColor(self, r, g, b):
         if (isinstance(self._lcd, RGBLCD)):
             self._lcd.setRGB(r, g, b)
